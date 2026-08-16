@@ -22,4 +22,12 @@ response = client.chat.completions.create(
     messages=messages
 )
 
+if response.usage is None:
+    raise RuntimeError("Failed API request")
+
+tokens_sent = response.usage.prompt_tokens
+tokens_received = response.usage.completion_tokens
+
+print(f"Prompt tokens: {tokens_sent}")
+print(f"Response tokens: {tokens_received}")
 print(response.choices[0].message.content)
