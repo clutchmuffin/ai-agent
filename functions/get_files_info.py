@@ -30,7 +30,7 @@ def file_information_builder(directory: str) -> str:
         files_in_directory = os.listdir(directory)
         for file in files_in_directory:
             file_name = file
-            file_path = directory + "/" + file
+            file_path = os.path.join(directory, file)
             file_size = os.path.getsize(file_path)
             is_file_dir = os.path.isdir(file_path)
 
