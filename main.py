@@ -1,4 +1,4 @@
-import os
+import os, argparse
 from dotenv import load_dotenv
 from openai import OpenAI
 
@@ -10,10 +10,14 @@ client = OpenAI(
     api_key=api_key,
 )
 
+parser = argparse.ArgumentParser(description="Chatbot")
+parser.add_argument("user_prompt", type=str, help="User prompt")
+args = parser.parse_args()
+
 messages = [
     {
         "role": "user",
-        "content": "Why is Boot.dev such a great place to learn backend development? Use one paragraph maximum.",
+        "content": args.user_prompt,
     }
 ]
 
