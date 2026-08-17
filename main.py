@@ -6,6 +6,7 @@ from openai import OpenAI
 
 DEFAULT_MODEL = "openrouter/free"
 
+
 def load_api_key() -> str:
     load_dotenv()
     api_key = os.environ.get("OPENROUTER_API_KEY")
@@ -17,7 +18,9 @@ def load_api_key() -> str:
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Chatbot")
     parser.add_argument("user_prompt", type=str, help="User prompt")
-    parser.add_argument("--verbose", "-v", action="store_true", help="Enable verbose output")
+    parser.add_argument(
+        "--verbose", "-v", action="store_true", help="Enable verbose output"
+    )
     return parser.parse_args()
 
 
@@ -28,7 +31,9 @@ def create_client() -> OpenAI:
     )
 
 
-def chat(client: OpenAI, user_prompt: str, model: str = DEFAULT_MODEL) -> OpenAI.Response:
+def chat(
+    client: OpenAI, user_prompt: str, model: str = DEFAULT_MODEL
+) -> OpenAI.Response:
     response = client.chat.completions.create(
         model=model,
         messages=[{"role": "user", "content": user_prompt}],
