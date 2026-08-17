@@ -4,13 +4,13 @@ import os
 def get_files_info(working_directory: str, directory: str = ".") -> str:
 
     try:
-        absolute_working_directory = os.path.abspath(working_directory)
-        target_directory = os.path.normpath(
+        absolute_working_directory: str = os.path.abspath(working_directory)
+        target_directory: str = os.path.normpath(
             os.path.join(absolute_working_directory, directory)
         )
 
         # Check if target directory is in the working_directory
-        valid_target_directory = (
+        valid_target_directory: bool = (
             os.path.commonpath([absolute_working_directory, target_directory])
             == absolute_working_directory
         )
@@ -32,12 +32,12 @@ def file_information_builder(directory: str) -> str:
     contents = ""
 
     try:
-        files_in_directory = os.listdir(directory)
+        files_in_directory: list[str] = os.listdir(directory)
         for file in files_in_directory:
-            file_name = file
-            file_path = os.path.join(directory, file)
-            file_size = os.path.getsize(file_path)
-            is_file_dir = os.path.isdir(file_path)
+            file_name: str = file
+            file_path: str = os.path.join(directory, file)
+            file_size: int = os.path.getsize(file_path)
+            is_file_dir: bool = os.path.isdir(file_path)
 
             contents += f"- {file_name}: file_size={file_size}, is_dir={is_file_dir}\n"
 
