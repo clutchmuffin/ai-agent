@@ -1,10 +1,13 @@
 import argparse
+import json
 import os
 
 from dotenv import load_dotenv
 from openai import OpenAI
 from openai.types.chat import ChatCompletion
+from openai.types.chat.chat_completion_message import ChatCompletionMessage
 
+from functions.call_function import available_functions
 from prompts import system_prompt
 
 DEFAULT_MODEL = "openrouter/free"
@@ -43,6 +46,7 @@ def chat(
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
         ],
+        tools=available_functions,
     )
     if response.usage is None:
         raise RuntimeError("Failed API request")
@@ -63,7 +67,14 @@ def main() -> None:
 
     if args.verbose:
         print_verbose(args, response)
-    print(response.choices[0].message.content)
+
+    message: ChatCompletionMessage = response.choices[0].message
+    if message.tool_calls is not None:
+        for tool_call in message.tool_calls:
+            function_args = json.loads(tool_call.function.arguments or "{}")
+            print(f"Calling function: {tool_call.function.name}({function_args})")
+    else:
+        print(response.choices[0].message.content)
 
 
 if __name__ == "__main__":
