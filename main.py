@@ -51,8 +51,9 @@ def chat(
 
 def print_verbose(args: argparse.Namespace, response: ChatCompletion) -> None:
     print(f"User prompt: {args.user_prompt}")
-    print(f"Prompt tokens: {response.usage.prompt_tokens}")
-    print(f"Response tokens: {response.usage.completion_tokens}")
+    if response.usage is not None:
+        print(f"Prompt tokens: {response.usage.prompt_tokens}")
+        print(f"Response tokens: {response.usage.completion_tokens}")
 
 
 def main() -> None:
