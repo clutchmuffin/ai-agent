@@ -1,6 +1,5 @@
 import os
 import subprocess as sp
-from queue import Empty
 
 
 def run_python_file(
