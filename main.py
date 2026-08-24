@@ -1,5 +1,4 @@
 import argparse
-import json
 import os
 
 from dotenv import load_dotenv
@@ -7,10 +6,9 @@ from openai import OpenAI
 from openai.types.chat import ChatCompletion
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
 
+from config import DEFAULT_MODEL, MAX_ITERATIONS
 from functions.call_function import available_functions, call_function
 from prompts import system_prompt
-
-DEFAULT_MODEL = "openrouter/free"
 
 
 def load_api_key() -> str:
@@ -37,15 +35,12 @@ def create_client() -> OpenAI:
     )
 
 
-def chat(
-    client: OpenAI, user_prompt: str, model: str = DEFAULT_MODEL
+def call_llm(
+    client: OpenAI, messages: list[dict], model: str = DEFAULT_MODEL
 ) -> ChatCompletion:
     response: ChatCompletion = client.chat.completions.create(
         model=model,
-        messages=[
-            {"role": "system", "content": system_prompt},
-            {"role": "user", "content": user_prompt},
-        ],
+        messages=messages,
         tools=available_functions,
     )
     if response.usage is None:
@@ -63,28 +58,56 @@ def print_verbose(args: argparse.Namespace, response: ChatCompletion) -> None:
 def main() -> None:
     args = parse_args()
     client = create_client()
-    response = chat(client, args.user_prompt)
 
-    if args.verbose:
-        print_verbose(args, response)
+    # Build the conversation history
+    messages = [
+        {"role": "system", "content": system_prompt},
+        {"role": "user", "content": args.user_prompt},
+    ]
 
-    message: ChatCompletionMessage = response.choices[0].message
-    if message.tool_calls is None:
-        print(message.content)
-        return
+    # Main agent loop
+    for i in range(MAX_ITERATIONS):
+        response = call_llm(client, messages)
 
-    for tool_call in message.tool_calls:
-        result_message = call_function(tool_call, verbose=args.verbose)
+        if args.verbose and i == 0:
+            print_verbose(args, response)
 
-        content = result_message.get("content", "")
-        if not content:
-            raise RuntimeError(
-                f"Tool call {tool_call.id} for function {tool_call.function.name} "
-                "returned an empty content field."
+        message: ChatCompletionMessage = response.choices[0].message
+        messages.append(message)
+
+        # If no tool calls, we got the final response
+        if message.tool_calls is None:
+            print(message.content)
+            return
+
+        # Execute each tool call and collect tool messages
+        for tool_call in message.tool_calls:
+            result_message = call_function(tool_call, verbose=args.verbose)
+
+            content = result_message.get("content", "")
+            if not content:
+                raise RuntimeError(
+                    f"Tool call {tool_call.id} for function {tool_call.function.name} "
+                    "returned an empty content field."
+                )
+
+            if args.verbose:
+                print(f"-> {content}")
+
+            # Append tool result to list of messages so far
+            messages.append(
+                {
+                    "role": "tool",
+                    "tool_call_id": tool_call.id,
+                    "content": content,
+                }
             )
 
-        if args.verbose:
-            print(f"-> {content}")
+    print(
+        f"Error: reached maximum number of iterations ({MAX_ITERATIONS}) "
+        "without a final response from the model."
+    )
+    sys.exit(1)
 
 
 if __name__ == "__main__":
