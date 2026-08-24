@@ -1,1 +1,3 @@
+DEFAULT_MODEL = "openrouter/free"
 MAX_CHARS: int = 10000
+MAX_ITERATIONS = 20
