@@ -7,7 +7,7 @@ from openai import OpenAI
 from openai.types.chat import ChatCompletion
 from openai.types.chat.chat_completion_message import ChatCompletionMessage
 
-from functions.call_function import available_functions
+from functions.call_function import available_functions, call_function
 from prompts import system_prompt
 
 DEFAULT_MODEL = "openrouter/free"
@@ -69,12 +69,22 @@ def main() -> None:
         print_verbose(args, response)
 
     message: ChatCompletionMessage = response.choices[0].message
-    if message.tool_calls is not None:
-        for tool_call in message.tool_calls:
-            function_args = json.loads(tool_call.function.arguments or "{}")
-            print(f"Calling function: {tool_call.function.name}({function_args})")
-    else:
-        print(response.choices[0].message.content)
+    if message.tool_calls is None:
+        print(message.content)
+        return
+
+    for tool_call in message.tool_calls:
+        result_message = call_function(tool_call, verbose=args.verbose)
+
+        content = result_message.get("content", "")
+        if not content:
+            raise RuntimeError(
+                f"Tool call {tool_call.id} for function {tool_call.function.name} "
+                "returned an empty content field."
+            )
+
+        if args.verbose:
+            print(f"-> {content}")
 
 
 if __name__ == "__main__":
